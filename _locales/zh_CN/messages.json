@@ -651,6 +651,30 @@
 		"message": "滚动到最右侧",
 		"description": "Scroll to the rightmost position"
 	},
+	"actionUnloadTab": {
+		"message": "卸载标签页",
+		"description": "Unload the current tab without closing it"
+	},
+	"closeTabsTabs": {
+		"message": "标签页",
+		"description": "Label for regular tab handling"
+	},
+	"closeTabsPinnedTabs": {
+		"message": "固定标签页",
+		"description": "Label for pinned tab handling"
+	},
+	"closeTabsClose": {
+		"message": "关闭",
+		"description": "Close tab handling option"
+	},
+	"closeTabsKeep": {
+		"message": "保留",
+		"description": "Keep tab handling option"
+	},
+	"closeTabsUnload": {
+		"message": "卸载",
+		"description": "Unload tab handling option"
+	},
 	"actionCloseTab": {
 		"message": "关闭标签页",
 		"description": "Close tab"

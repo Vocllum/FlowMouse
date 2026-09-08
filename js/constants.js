@@ -37,6 +37,7 @@
 		'scrollToLeftEdge': 'actionScrollToLeftEdge',
 		'scrollToRightEdge': 'actionScrollToRightEdge',
 		'closeTab': 'actionCloseTab',
+		'unloadTab': 'actionUnloadTab',
 		'closeWindow': 'actionCloseWindow',
 		'closeBrowser': 'actionCloseBrowser',
 		'restoreTab': 'actionRestoreTab',
@@ -101,11 +102,11 @@
 	};
 
 	const ACTION_DEFAULTS = {
-		closeTab: { keepWindow: false, afterClose: 'default', skipPinned: false },
-		closeOtherTabs: { skipPinned: true, preserveTab: false },
-		closeLeftTabs: { skipPinned: true, preserveTab: false },
-		closeRightTabs: { skipPinned: true, preserveTab: false },
-		closeAllTabs: { skipPinned: true },
+		closeTab: { keepWindow: false, afterClose: 'default', skipPinned: false, pinnedAction: '' },
+		closeOtherTabs: { skipPinned: true, pinnedAction: '', preserveTab: false },
+		closeLeftTabs: { skipPinned: true, pinnedAction: '', preserveTab: false },
+		closeRightTabs: { skipPinned: true, pinnedAction: '', preserveTab: false },
+		closeAllTabs: { skipPinned: true, pinnedAction: '' },
 		refresh: { hardReload: false },
 		refreshAllTabs: { hardReload: false },
 		newWindow: { focused: true },
