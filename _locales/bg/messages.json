@@ -708,7 +708,7 @@
 		"description": "Checkbox label for batch close tab actions to skip pinned tabs"
 	},
 	"closeTabsPreserveTab": {
-		"message": "Запазване на разделите (освобождаване на съдържанието на страницата)",
+		"message": "Освобождаване на раздели",
 		"description": "Checkbox label for batch close tab actions to discard tabs instead of closing them"
 	},
 	"actionCloseOtherTabs": {

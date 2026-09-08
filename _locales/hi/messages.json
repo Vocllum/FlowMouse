@@ -708,7 +708,7 @@
 		"description": "Checkbox label for batch close tab actions to skip pinned tabs"
 	},
 	"closeTabsPreserveTab": {
-		"message": "टैब सुरक्षित रखें (पेज का कॉन्टेंट अनलोड करें)",
+		"message": "अनलोड करें",
 		"description": "Checkbox label for batch close tab actions to discard tabs instead of closing them"
 	},
 	"actionCloseOtherTabs": {

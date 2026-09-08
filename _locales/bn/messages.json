@@ -708,7 +708,7 @@
 		"description": "Checkbox label for batch close tab actions to skip pinned tabs"
 	},
 	"closeTabsPreserveTab": {
-		"message": "ট্যাবগুলি সংরক্ষণ করুন (পৃষ্ঠার বিষয়বস্তু আনলোড করুন)",
+		"message": "আনলোড করুন",
 		"description": "Checkbox label for batch close tab actions to discard tabs instead of closing them"
 	},
 	"actionCloseOtherTabs": {

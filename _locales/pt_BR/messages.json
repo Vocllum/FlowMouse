@@ -708,7 +708,7 @@
 		"description": "Checkbox label for batch close tab actions to skip pinned tabs"
 	},
 	"closeTabsPreserveTab": {
-		"message": "Manter guias (descarregar o conteúdo da página)",
+		"message": "Descarregar",
 		"description": "Checkbox label for batch close tab actions to discard tabs instead of closing them"
 	},
 	"actionCloseOtherTabs": {

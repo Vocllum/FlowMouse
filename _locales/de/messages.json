@@ -708,7 +708,7 @@
 		"description": "Checkbox label for batch close tab actions to skip pinned tabs"
 	},
 	"closeTabsPreserveTab": {
-		"message": "Tabs beibehalten (Seiteninhalt entladen)",
+		"message": "Entladen",
 		"description": "Checkbox label for batch close tab actions to discard tabs instead of closing them"
 	},
 	"actionCloseOtherTabs": {
