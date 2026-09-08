@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "__MSG_extName__",
+    "name": "FlowMouse Unload Test",
     "version": "2.4",
     "author": "Hmily[LCG] & Coxxs",
     "description": "__MSG_extDescription__",
@@ -75,7 +75,7 @@
     ],
     "browser_specific_settings": {
         "gecko": {
-            "id": "flowmouse@52pojie.cn",
+            "id": "flowmouse-unload-test@vocllum.local",
             "strict_min_version": "140.0",
             "data_collection_permissions": {
                 "required": [

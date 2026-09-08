@@ -651,6 +651,30 @@
 		"message": "Scroll to Right Edge",
 		"description": "Scroll to the rightmost position"
 	},
+	"actionUnloadTab": {
+		"message": "Unload Tab",
+		"description": "Unload the current tab without closing it"
+	},
+	"closeTabsTabs": {
+		"message": "Tabs",
+		"description": "Label for regular tab handling"
+	},
+	"closeTabsPinnedTabs": {
+		"message": "Pinned tabs",
+		"description": "Label for pinned tab handling"
+	},
+	"closeTabsClose": {
+		"message": "Close",
+		"description": "Close tab handling option"
+	},
+	"closeTabsKeep": {
+		"message": "Keep",
+		"description": "Keep tab handling option"
+	},
+	"closeTabsUnload": {
+		"message": "Unload",
+		"description": "Unload tab handling option"
+	},
 	"actionCloseTab": {
 		"message": "Close Tab",
 		"description": "Close tab"

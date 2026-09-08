@@ -3325,11 +3325,14 @@ window.ContentContextMenu = ContentContextMenu;
 					msg_obj.keepWindow = !!mergedConfig.keepWindow;
 					msg_obj.afterClose = mergedConfig.afterClose || 'default';
 					msg_obj.skipPinned = !!mergedConfig.skipPinned;
+					msg_obj.pinnedAction = mergedConfig.pinnedAction || '';
 				} else if (action === 'closeOtherTabs' || action === 'closeLeftTabs' || action === 'closeRightTabs') {
 					msg_obj.skipPinned = !!mergedConfig.skipPinned;
 					msg_obj.preserveTab = !!mergedConfig.preserveTab;
+					msg_obj.pinnedAction = mergedConfig.pinnedAction || '';
 				} else if (action === 'closeAllTabs') {
 					msg_obj.skipPinned = !!mergedConfig.skipPinned;
+					msg_obj.pinnedAction = mergedConfig.pinnedAction || '';
 				} else if (action === 'switchLeftTab' || action === 'switchRightTab') {
 					msg_obj.noWrap = !!mergedConfig.noWrap;
 					msg_obj.moveTab = !!mergedConfig.moveTab;

@@ -34,6 +34,7 @@ const ACTION_ICONS = {
 	'scrollToLeftEdge': 'chevronsLeft',
 	'scrollToRightEdge': 'chevronsRight',
 	'closeTab': 'x',
+	'unloadTab': 'circlePause',
 	'closeWindow': 'squareX',
 	'closeBrowser': 'circleX',
 	'restoreTab': 'rotateCcw',
@@ -106,7 +107,7 @@ const ACTION_CATEGORIES = [
 	{ key: '', actions: ['none', 'actionChain', 'delay'] },
 	{ key: 'actionCategoryNavigation', icon: 'compass', actions: ['back', 'forward', 'urlLevelUp', 'urlToRoot', 'scrollUp', 'scrollDown', 'scrollLeft', 'scrollRight', 'scrollToTop', 'scrollToBottom', 'scrollToLeftEdge', 'scrollToRightEdge'] },
 	{ key: 'actionCategoryContextMenu', icon: 'menu', actions: ['menuShowTabs', 'menuRecentlyClosed', 'menuShowBookmarks', 'customMenu'] },
-	{ key: 'actionCategoryTabs', icon: 'panelTop', actions: ['newTab', 'closeTab', 'refresh', 'refreshAllTabs', 'switchLeftTab', 'switchRightTab', 'switchFirstTab', 'switchLastTab', 'closeOtherTabs', 'closeLeftTabs', 'closeRightTabs', 'closeAllTabs', 'switchLastActiveTab', 'restoreTab', 'duplicateTab', 'togglePinTab', 'moveTabToNewWindow'] },
+	{ key: 'actionCategoryTabs', icon: 'panelTop', actions: ['newTab', 'closeTab', 'unloadTab', 'refresh', 'refreshAllTabs', 'switchLeftTab', 'switchRightTab', 'switchFirstTab', 'switchLastTab', 'closeOtherTabs', 'closeLeftTabs', 'closeRightTabs', 'closeAllTabs', 'switchLastActiveTab', 'restoreTab', 'duplicateTab', 'togglePinTab', 'moveTabToNewWindow'] },
 	{ key: 'actionCategoryWindow', icon: 'appWindow', actions: ['newWindow', 'newIncognito', 'toggleFullscreen', 'toggleMaximize', 'minimize', 'closeWindow', 'closeBrowser'] },
 	{ key: 'actionCategoryUtilities', icon: 'wrench', actions: ['addToBookmarks', 'copyUrl', 'copyTitle', 'copyTitleAndUrl', 'openCustomUrl', 'openDownloads', 'openHistory', 'openExtensions', 'zoomIn', 'zoomOut', 'resetZoom', 'toggleMuteTab', 'toggleMuteAllTabs', 'stopLoading', 'stopAllLoading', 'printPage', 'saveAsMhtml', 'viewPageSource', 'pasteClipboard', 'pasteContent', 'searchClipboard', 'pauseGesture', 'simulateKey', 'sendCustomEvent', 'sendExtensionMessage', 'areaSelect'] },
 ];
@@ -1241,7 +1242,8 @@ class ActionSelect extends LitElement {
 			const defaults = ACTION_DEFAULTS.closeTab;
 			const keepWindowChecked = this._pendingConfig.keepWindow ?? defaults.keepWindow;
 			const afterClose = this._pendingConfig.afterClose ?? defaults.afterClose;
-			const skipPinnedChecked = this._pendingConfig.skipPinned ?? defaults.skipPinned;
+			const pinnedAction = this._pendingConfig.pinnedAction
+				|| ((this._pendingConfig.skipPinned ?? defaults.skipPinned) ? 'keep' : 'close');
 			return html`
 				<label class="action-config-checkbox">
 					<input type="checkbox"
@@ -1250,13 +1252,17 @@ class ActionSelect extends LitElement {
 					>
 					<span>${window.i18n.getMessage('closeTabKeepWindow')}</span>
 				</label>
-				<label class="action-config-checkbox">
-					<input type="checkbox"
-						.checked=${skipPinnedChecked}
-						@change=${(e) => { this._pendingConfig = { ...this._pendingConfig, skipPinned: e.target.checked }; this.requestUpdate(); }}
+				<div class="action-config-row">
+					<span class="action-config-label">${window.i18n.getMessage('closeTabsPinnedTabs')}</span>
+					<select class="action-config-select"
+						.value=${pinnedAction}
+						@change=${(e) => { this._pendingConfig = { ...this._pendingConfig, pinnedAction: e.target.value }; this.requestUpdate(); }}
 					>
-					<span>${window.i18n.getMessage('closeTabsSkipPinned')}</span>
-				</label>
+						<option value="close">${window.i18n.getMessage('closeTabsClose')}</option>
+						<option value="keep">${window.i18n.getMessage('closeTabsKeep')}</option>
+						<option value="unload">${window.i18n.getMessage('closeTabsUnload')}</option>
+					</select>
+				</div>
 				<div class="action-config-row">
 					<span class="action-config-label">${window.i18n.getMessage('closeTabAfterClose')}</span>
 					<select class="action-config-select"
@@ -1272,26 +1278,43 @@ class ActionSelect extends LitElement {
 		}
 		if (action === 'closeOtherTabs' || action === 'closeLeftTabs' || action === 'closeRightTabs' || action === 'closeAllTabs') {
 			const defaults = ACTION_DEFAULTS[action];
-			const skipPinnedChecked = this._pendingConfig.skipPinned ?? defaults.skipPinned;
 			const supportsPreserveTab = action !== 'closeAllTabs';
 			const preserveTabChecked = this._pendingConfig.preserveTab ?? defaults.preserveTab;
+			const legacyPinnedAction = (this._pendingConfig.skipPinned ?? defaults.skipPinned)
+				? 'keep'
+				: (preserveTabChecked ? 'unload' : 'close');
+			const pinnedAction = this._pendingConfig.pinnedAction || legacyPinnedAction;
 			return html`
-				<label class="action-config-checkbox">
-					<input type="checkbox"
-						.checked=${skipPinnedChecked}
-						@change=${(e) => { this._pendingConfig = { ...this._pendingConfig, skipPinned: e.target.checked }; this.requestUpdate(); }}
-					>
-					<span>${window.i18n.getMessage('closeTabsSkipPinned')}</span>
-				</label>
 				${supportsPreserveTab ? html`
-				<label class="action-config-checkbox">
-					<input type="checkbox"
-						.checked=${preserveTabChecked}
-						@change=${(e) => { this._pendingConfig = { ...this._pendingConfig, preserveTab: e.target.checked }; this.requestUpdate(); }}
+				<div class="action-config-row">
+					<span class="action-config-label">${window.i18n.getMessage('closeTabsTabs')}</span>
+					<select class="action-config-select"
+						.value=${preserveTabChecked ? 'unload' : 'close'}
+						@change=${(e) => {
+							this._pendingConfig = {
+								...this._pendingConfig,
+								preserveTab: e.target.value === 'unload',
+								pinnedAction: this._pendingConfig.pinnedAction || pinnedAction,
+							};
+							this.requestUpdate();
+						}}
 					>
-					<span>${window.i18n.getMessage('closeTabsPreserveTab')}</span>
-				</label>
+						<option value="close">${window.i18n.getMessage('closeTabsClose')}</option>
+						<option value="unload">${window.i18n.getMessage('closeTabsUnload')}</option>
+					</select>
+				</div>
 				` : ''}
+				<div class="action-config-row">
+					<span class="action-config-label">${window.i18n.getMessage('closeTabsPinnedTabs')}</span>
+					<select class="action-config-select"
+						.value=${pinnedAction}
+						@change=${(e) => { this._pendingConfig = { ...this._pendingConfig, pinnedAction: e.target.value }; this.requestUpdate(); }}
+					>
+						<option value="close">${window.i18n.getMessage('closeTabsClose')}</option>
+						<option value="keep">${window.i18n.getMessage('closeTabsKeep')}</option>
+						<option value="unload">${window.i18n.getMessage('closeTabsUnload')}</option>
+					</select>
+				</div>
 			`;
 		}
 		if (action === 'switchLeftTab' || action === 'switchRightTab') {

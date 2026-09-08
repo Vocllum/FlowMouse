@@ -205,6 +205,73 @@ function replaceUrlPlaceholders(template, tab) {
 	});
 }
 
+async function unloadCurrentTab(sender, { afterClose = 'default' } = {}) {
+	const currentTab = sender.tab;
+	if (!currentTab?.id) return;
+
+	const tabs = await chrome.tabs.query({ windowId: currentTab.windowId });
+	const visibleTabs = tabs.filter(tab => tab.id !== currentTab.id && !tab.hidden);
+	let targetTab;
+
+	if (afterClose === 'left') {
+		targetTab = visibleTabs
+			.filter(tab => tab.index < currentTab.index)
+			.sort((a, b) => b.index - a.index)[0]
+			|| visibleTabs.slice().sort((a, b) => b.index - a.index)[0];
+	} else if (afterClose === 'right') {
+		targetTab = visibleTabs
+			.filter(tab => tab.index > currentTab.index)
+			.sort((a, b) => a.index - b.index)[0]
+			|| visibleTabs.slice().sort((a, b) => a.index - b.index)[0];
+	} else {
+		targetTab = visibleTabs
+			.filter(tab => tab.index > currentTab.index)
+			.sort((a, b) => a.index - b.index)[0];
+
+		if (!targetTab) {
+			targetTab = visibleTabs
+				.filter(tab => tab.index < currentTab.index)
+				.sort((a, b) => b.index - a.index)[0];
+		}
+	}
+
+	if (targetTab) {
+		await chrome.tabs.update(targetTab.id, { active: true });
+	} else {
+		await chrome.tabs.create({ active: true, windowId: currentTab.windowId });
+	}
+
+	await chrome.tabs.discard(currentTab.id);
+}
+
+function getPinnedTabAction(request) {
+	if (request.pinnedAction) return request.pinnedAction;
+	if (request.skipPinned) return 'keep';
+	if (request.preserveTab) return 'unload';
+	return 'close';
+}
+
+async function applyTabAction(tabs, action) {
+	if (action === 'keep' || tabs.length === 0) return;
+
+	if (action === 'unload') {
+		await Promise.all(tabs
+			.filter(tab => !tab.discarded)
+			.map(tab => chrome.tabs.discard(tab.id)));
+		return;
+	}
+
+	await chrome.tabs.remove(tabs.map(tab => tab.id));
+}
+
+async function applyBatchTabActions(tabs, request, regularAction) {
+	const regularTabs = tabs.filter(tab => !tab.pinned);
+	const pinnedTabs = tabs.filter(tab => tab.pinned);
+
+	await applyTabAction(regularTabs, regularAction);
+	await applyTabAction(pinnedTabs, getPinnedTabAction(request));
+}
+
 async function handleAction(request, sender) {
 	switch (request.action) {
 		case 'back':
@@ -246,9 +313,17 @@ async function handleAction(request, sender) {
 
 		case 'closeTab': {
 			if (sender.tab?.id) {
-				if (request.skipPinned && sender.tab.pinned) {
-					return { success: true };
+				if (sender.tab.pinned) {
+					const pinnedAction = getPinnedTabAction(request);
+					if (pinnedAction === 'keep') {
+						return { success: true };
+					}
+					if (pinnedAction === 'unload') {
+						await unloadCurrentTab(sender, { afterClose: request.afterClose });
+						return { success: true };
+					}
 				}
+
 				const tabs = await chrome.tabs.query({ windowId: sender.tab.windowId });
 				const currentPos = tabs.findIndex(t => t.id === sender.tab.id);
 				const afterClose = request.afterClose || 'default';
@@ -273,6 +348,10 @@ async function handleAction(request, sender) {
 			}
 			return { success: true };
 		}
+
+		case 'unloadTab':
+			await unloadCurrentTab(sender);
+			return { success: true };
 
 		case 'closeWindow':
 			if (sender.tab?.windowId) {
@@ -450,56 +529,22 @@ async function handleAction(request, sender) {
 		case 'saveAsMhtml':
 			return { success: true };
 
-		case 'closeOtherTabs': {
-			if (sender.tab) {
-				const tabs = await chrome.tabs.query({ windowId: sender.tab.windowId });
-				const targetTabs = tabs
-					.filter(tab => tab.id !== sender.tab.id && !(request.skipPinned && tab.pinned));
-
-				if (request.preserveTab) {
-					await Promise.all(targetTabs.filter(tab => !tab.discarded).map(tab => chrome.tabs.discard(tab.id)));
-				} else {
-					const tabsToRemove = targetTabs.map(tab => tab.id);
-					if (tabsToRemove.length > 0) {
-						await chrome.tabs.remove(tabsToRemove);
-					}
-				}
-			}
-			return { success: true };
-		}
-
-		case 'closeRightTabs': {
-			if (sender.tab) {
-				const tabs = await chrome.tabs.query({ windowId: sender.tab.windowId });
-				const targetTabs = tabs
-					.filter(tab => tab.index > sender.tab.index && !(request.skipPinned && tab.pinned));
-
-				if (request.preserveTab) {
-					await Promise.all(targetTabs.filter(tab => !tab.discarded).map(tab => chrome.tabs.discard(tab.id)));
-				} else {
-					const tabsToRemove = targetTabs.map(tab => tab.id);
-					if (tabsToRemove.length > 0) {
-						await chrome.tabs.remove(tabsToRemove);
-					}
-				}
-			}
-			return { success: true };
-		}
-
+		case 'closeOtherTabs':
+		case 'closeRightTabs':
 		case 'closeLeftTabs': {
 			if (sender.tab) {
 				const tabs = await chrome.tabs.query({ windowId: sender.tab.windowId });
-				const targetTabs = tabs
-					.filter(tab => tab.index < sender.tab.index && !(request.skipPinned && tab.pinned));
+				const targetTabs = tabs.filter(tab => {
+					if (request.action === 'closeOtherTabs') return tab.id !== sender.tab.id;
+					if (request.action === 'closeRightTabs') return tab.index > sender.tab.index;
+					return tab.index < sender.tab.index;
+				});
 
-				if (request.preserveTab) {
-					await Promise.all(targetTabs.filter(tab => !tab.discarded).map(tab => chrome.tabs.discard(tab.id)));
-				} else {
-					const tabsToRemove = targetTabs.map(tab => tab.id);
-					if (tabsToRemove.length > 0) {
-						await chrome.tabs.remove(tabsToRemove);
-					}
-				}
+				await applyBatchTabActions(
+					targetTabs,
+					request,
+					request.preserveTab ? 'unload' : 'close'
+				);
 			}
 			return { success: true };
 		}
@@ -518,16 +563,14 @@ async function handleAction(request, sender) {
 
 		case 'closeAllTabs': {
 			const tabs = await chrome.tabs.query({ windowId: sender.tab.windowId });
-			const tabsToRemove = tabs
-				.filter(tab => !(request.skipPinned && tab.pinned))
-				.map(tab => tab.id);
-			if (tabsToRemove.length > 0) {
-				const remainingTabs = tabs.length - tabsToRemove.length;
-				if (remainingTabs === 0) {
-					await chrome.tabs.create({ active: true, windowId: sender.tab.windowId });
-				}
-				await chrome.tabs.remove(tabsToRemove);
+			const pinnedTabs = tabs.filter(tab => tab.pinned);
+			const pinnedAction = getPinnedTabAction(request);
+
+			if (pinnedAction !== 'keep' || pinnedTabs.length === 0) {
+				await chrome.tabs.create({ active: true, windowId: sender.tab.windowId });
 			}
+
+			await applyBatchTabActions(tabs, request, 'close');
 			return { success: true };
 		}
 
